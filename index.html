@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2563eb"><link rel="manifest" href="manifest.webmanifest">
+<title>My English Words</title>
+<style>
+:root{color-scheme:light dark;--bg:#f4f7fb;--card:#fff;--text:#172033;--sub:#667085;--blue:#2563eb;--green:#16a34a;--red:#dc2626;--line:#d9e0ea}
+@media(prefers-color-scheme:dark){:root{--bg:#0f172a;--card:#162033;--text:#f8fafc;--sub:#aab4c5;--line:#334155}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.app{max-width:620px;margin:auto;padding:max(18px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}.top{display:flex;justify-content:space-between;align-items:center;gap:10px}.title{font-size:20px;font-weight:800}.stats{font-size:13px;color:var(--sub);text-align:right}.card{margin-top:16px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:24px;box-shadow:0 8px 26px #0001}.word{font-size:34px;font-weight:800;text-align:center;overflow-wrap:anywhere}.speak{display:block;margin:14px auto 0;border:1px solid var(--line);background:transparent;color:var(--text);border-radius:999px;padding:10px 16px;font-size:16px}.meaning{margin-top:24px;padding:18px;border-radius:16px;background:var(--bg);text-align:center;font-size:22px;min-height:64px}.hint{color:var(--sub);font-size:13px}.reveal,.btn{width:100%;border:0;border-radius:16px;padding:16px;font-size:18px;font-weight:800}.reveal{margin-top:18px;background:var(--blue);color:white}.actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.bad{background:#fee2e2;color:#991b1b}.good{background:#dcfce7;color:#166534}.tools{display:grid;gap:10px;margin-top:16px}.file{display:block;text-align:center;border:1px dashed var(--blue);color:var(--blue);border-radius:14px;padding:13px;font-weight:700}.file input{display:none}.secondary{background:transparent;color:var(--text);border:1px solid var(--line);font-size:15px;padding:12px}.msg{min-height:22px;margin-top:10px;color:var(--sub);font-size:13px;text-align:center}.hidden{display:none}.empty{text-align:center;color:var(--sub);padding:30px 8px}button:focus-visible,.file:focus-within{outline:3px solid #93c5fd;outline-offset:2px}button{touch-action:manipulation}
+</style></head>
+<body><main class="app">
+<div class="top"><div class="title">My English Words</div><div class="stats" id="stats">0語</div></div>
+<section class="card" id="study">
+ <div id="empty" class="empty">CSVを読み込んで学習を始めます。<br><small>列名: word, meaning</small></div>
+ <div id="quiz" class="hidden">
+  <div class="word" id="word"></div><button type="button" class="speak" id="speak">🔊 発音</button>
+  <div class="meaning"><span id="masked" class="hint">意味を考えてください</span><span id="meaning" class="hidden"></span></div>
+  <button type="button" class="reveal" id="reveal">答えを見る</button>
+  <div class="actions hidden" id="actions"><button type="button" class="btn bad" id="bad">分からない</button><button type="button" class="btn good" id="good">分かった</button></div>
+ </div>
+</section>
+<div class="tools">
+<label class="file">CSVを読み込む<input id="csv" type="file" accept=".csv,text/csv"></label>
+<button type="button" class="btn secondary" id="reset">学習履歴をリセット</button>
+</div><div class="msg" id="msg" aria-live="polite"></div>
+</main>
+<script>
+(()=>{const $=id=>document.getElementById(id),K='myEnglishWords.v1';let words=[],current=null;
+function load(){try{words=JSON.parse(localStorage.getItem(K)||'[]')}catch{words=[]} render()}
+function save(){localStorage.setItem(K,JSON.stringify(words))}
+function escCsv(line){let out=[],v='',q=false;for(let i=0;i<line.length;i++){let c=line[i];if(c==='"'){if(q&&line[i+1]==='"'){v+='"';i++}else q=!q}else if(c===','&&!q){out.push(v.trim());v=''}else v+=c}out.push(v.trim());return out}
+function parse(text){text=text.replace(/^\uFEFF/,'').replace(/\r/g,'');let rows=text.split('\n').filter(x=>x.trim()).map(escCsv);if(!rows.length)return[];let h=rows[0].map(x=>x.toLowerCase());let wi=h.findIndex(x=>['word','english','英単語','単語'].includes(x)),mi=h.findIndex(x=>['meaning','japanese','意味','日本語'].includes(x));let start=1;if(wi<0||mi<0){wi=0;mi=1;start=0}return rows.slice(start).filter(r=>r[wi]&&r[mi]).map(r=>({word:r[wi],meaning:r[mi],ok:0,ng:0,last:0}))}
+function choose(){if(!words.length)return null;let pool=[];words.forEach((w,i)=>{let weight=Math.min(8,1+w.ng*2-Math.min(w.ok,3));for(let n=0;n<Math.max(1,weight);n++)pool.push(i)});let idx=pool[Math.floor(Math.random()*pool.length)];return words[idx]}
+function next(){current=choose();$('meaning').classList.add('hidden');$('masked').classList.remove('hidden');$('reveal').classList.remove('hidden');$('actions').classList.add('hidden');if(current){$('word').textContent=current.word;$('meaning').textContent=current.meaning}renderStats()}
+function render(){let has=words.length;$('empty').classList.toggle('hidden',has);$('quiz').classList.toggle('hidden',!has);if(has)next();else renderStats()}
+function renderStats(){let total=words.reduce((s,w)=>s+w.ok+w.ng,0),ok=words.reduce((s,w)=>s+w.ok,0);$('stats').textContent=`${words.length}語 / 正答率 ${total?Math.round(ok/total*100):0}%`}
+$('reveal').addEventListener('click',()=>{$('meaning').classList.remove('hidden');$('masked').classList.add('hidden');$('reveal').classList.add('hidden');$('actions').classList.remove('hidden')});
+function answer(ok){if(!current)return;ok?current.ok++:current.ng++;current.last=Date.now();save();next()}
+$('good').addEventListener('click',()=>answer(true));$('bad').addEventListener('click',()=>answer(false));
+$('speak').addEventListener('click',()=>{if(!current)return;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(current.word);u.lang='en-US';u.rate=.85;speechSynthesis.speak(u)});
+$('csv').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let nw=parse(String(r.result));if(!nw.length){$('msg').textContent='CSVを読めませんでした。word,meaning の2列を確認してください。';return}let old=new Map(words.map(w=>[w.word.toLowerCase(),w]));words=nw.map(w=>{let p=old.get(w.word.toLowerCase());return p?{...w,ok:p.ok||0,ng:p.ng||0,last:p.last||0}:w});save();$('msg').textContent=`${words.length}語を読み込みました。`;render()};r.readAsText(f,'UTF-8')});
+$('reset').addEventListener('click',()=>{if(confirm('正答・誤答の履歴をリセットしますか？')){words.forEach(w=>Object.assign(w,{ok:0,ng:0,last:0}));save();$('msg').textContent='学習履歴をリセットしました。';next()}});
+if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});load()})();
+</script></body></html>
