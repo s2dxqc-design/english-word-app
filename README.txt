@@ -1,13 +1,10 @@
-My English Words Ver.2.2
+My English Words Ver.2.3
 
-修正点:
-- Ver.2.1で壊れていたCSV改行処理を全面修正
-- English / Japanese 列を正式対応
-- 7列CSV (English,Japanese,Example,ExampleMeaning,Category,Difficulty,Notes) 対応
-- 引用符付きカンマ、UTF-8 BOM、CRLF/LF改行対応
-- 読込失敗時に原因を画面表示
-- 同じCSVを再選択可能
-- V2の学習履歴を維持
-- Service Workerキャッシュをv22へ更新
-
-GitHubで index.html / manifest.webmanifest / sw.js を置き換えて Commit changes してください。
+追加・変更:
+- 出題順を「ランダム」「順番通り」から選択可能
+- 順番通りはCSVの上から順番に出題し、最後まで行くと先頭へ戻る
+- 一度CSVを読み込んだら、単語をlocalStorageに保持
+- Safariやホーム画面アプリを閉じても単語を保持
+- 別CSVを誤って選んでも既存単語を上書きしない
+- 「学習履歴・単語をリセット」で初めて単語を削除
+- V2.2のCSV修正、履歴、時間、苦手モードを維持
